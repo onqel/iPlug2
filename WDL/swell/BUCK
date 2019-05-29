@@ -6,6 +6,10 @@ cxx_library(
         'swell.h',
     ],
 
+    platform_preprocessor_flags = [
+        ('linux-x86_64', ['-DSWELL_SUPPORT_GTK']),
+    ],
+
     srcs = [
         'swell.cpp',
         'swell-ini.cpp',
