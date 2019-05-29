@@ -1,0 +1,62 @@
+cxx_library(
+    name = 'swell',
+    header_namespace = '',
+
+    exported_headers = [
+        'swell.h',
+    ],
+
+    srcs = [
+        'swell.cpp',
+        'swell-ini.cpp',
+        'swell-miscdlg-generic.cpp',
+        'swell-wnd-generic.cpp',
+        'swell-menu-generic.cpp',
+        'swell-kb-generic.cpp',
+        'swell-dlg-generic.cpp',
+        'swell-gdi-generic.cpp',
+        'swell-misc-generic.cpp',
+        'swell-gdi-lice.cpp',
+        'swell-generic-headless.cpp',
+        'swell-generic-gdk.cpp',
+        'swell-appstub-generic.cpp',
+        'swell-modstub-generic.cpp',
+    ],
+
+    platform_compiler_flags = [
+        ('linux-x86_64', [
+            '-pipe',
+            '-fvisibility=hidden',
+            '-fno-math-errno',
+            '-fsigned-char',
+            '-fPIC',
+            '-DPIC',
+            '-Wall',
+            '-Wshadow',
+            '-Wno-unused-function',
+            '-Wno-multichar',
+            '-DSWELL_MAKING_DYLIB',            
+        ]),        
+    ],
+
+    deps = [
+        '//WDL/lice:lice'
+    ],
+
+    platform_deps = [
+        ('linux-x86_64', [
+                'platformdeps//linux:X11',
+                'platformdeps//linux:xi',
+                'platformdeps//linux:gtk+-3.0',
+                'platformdeps//linux:gdk-3.0',
+                'platformdeps//linux:freetype2',
+
+            ]),
+    ],
+
+    preferred_linkage = 'STATIC',
+    link_style = 'STATIC_PIC',
+    link_whole = True,
+
+    visibility = ['PUBLIC']
+)

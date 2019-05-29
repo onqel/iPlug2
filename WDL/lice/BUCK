@@ -1,0 +1,41 @@
+cxx_library(
+    name = 'lice',
+    header_namespace = '',
+
+    exported_headers = [
+        'lice.h',
+    ],
+
+    srcs = [
+        'lice.cpp',
+        'lice_arc.cpp',
+        'lice_colorspace.cpp',
+        'lice_line.cpp',
+        'lice_text.cpp',
+        'lice_textnew.cpp',
+        'lice_ico.cpp',
+        'lice_bmp.cpp',
+    ],
+
+    platform_compiler_flags = [
+        ('linux-x86_64', [
+            '-pipe',
+            '-fvisibility=hidden',
+            '-fno-math-errno',
+            '-fsigned-char',
+            '-fPIC',
+            '-DPIC',
+            '-Wall',
+            '-Wshadow',
+            '-Wno-unused-function',
+            '-Wno-multichar',
+            '-DSWELL_MAKING_DYLIB',            
+        ]),        
+    ],
+
+    preferred_linkage = 'STATIC',
+    link_style = 'STATIC_PIC',
+    link_whole = True,
+
+    visibility = ['PUBLIC']
+)

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.bzl": "python",
+        "BUCK": "python",
+        ".buckconfig": "ini"
+    }
+}
