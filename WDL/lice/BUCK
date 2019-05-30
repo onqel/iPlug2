@@ -1,10 +1,8 @@
+
 cxx_library(
     name = 'lice',
-    header_namespace = '',
-
-    exported_headers = [
-        'lice.h',
-    ],
+    header_namespace = '',    
+    exported_headers = glob(['*.h']),
 
     srcs = [
         'lice.cpp',
@@ -31,6 +29,11 @@ cxx_library(
             '-Wno-multichar',
             '-DSWELL_MAKING_DYLIB',            
         ]),        
+    ],
+
+    deps = [
+        '//WDL:WDL',
+        '//WDL/swell:swell_exports',
     ],
 
     preferred_linkage = 'STATIC',

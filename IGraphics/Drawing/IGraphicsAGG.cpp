@@ -8,6 +8,8 @@
  ==============================================================================
 */
 
+#if defined(IGRAPHICS_AGG)
+
 #include <algorithm>
 #include <cmath>
 
@@ -613,3 +615,5 @@ void IGraphicsAGG::DoDrawText(const IText& text, const char* str, const IRECT& b
 }
 
 #include "IGraphicsAGG_src.cpp"
+
+#endif

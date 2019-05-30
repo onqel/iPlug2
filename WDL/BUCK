@@ -1,0 +1,10 @@
+load('//Dependencies/buckbuild:subdir_glob.bzl', 'subdir_glob')
+
+prebuilt_cxx_library(
+    name = 'WDL',
+    header_namespace = '',
+    header_only = True,
+    exported_headers = glob(['*.h']),
+
+    visibility = ['PUBLIC']
+)

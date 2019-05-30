@@ -1,13 +1,24 @@
+
+prebuilt_cxx_library(
+    name = 'swell_exports',
+    header_namespace = '',
+    header_only = True,
+    exported_headers = ['swell.h', 'swell-types.h'],
+    visibility = ['//WDL/lice:lice']
+)
+
 cxx_library(
     name = 'swell',
     header_namespace = '',
 
     exported_headers = [
         'swell.h',
+        'swell-types.h',
+        'swell-functions.h',
     ],
 
-    platform_preprocessor_flags = [
-        ('linux-x86_64', ['-DSWELL_SUPPORT_GTK']),
+    exported_platform_preprocessor_flags = [
+        ('linux-x86_64', ['-DSWELL_SUPPORT_GTK=1', '-DWDL_NO_DEFINE_MINMAX=1']),
     ],
 
     srcs = [
@@ -49,13 +60,12 @@ cxx_library(
 
     platform_deps = [
         ('linux-x86_64', [
-                'platformdeps//linux:X11',
-                'platformdeps//linux:xi',
-                'platformdeps//linux:gtk+-3.0',
-                'platformdeps//linux:gdk-3.0',
-                'platformdeps//linux:freetype2',
-
-            ]),
+            'buckdeps//linux:X11',
+            'buckdeps//linux:xi',
+            'buckdeps//linux:gtk+-3.0',
+            'buckdeps//linux:gdk-3.0',
+            'buckdeps//linux:freetype2',
+        ]),
     ],
 
     preferred_linkage = 'STATIC',

@@ -1,0 +1,24 @@
+
+
+prebuilt_cxx_library(
+    name = 'IPlugExports',
+    header_namespace = '',
+    header_only = True,
+    exported_headers = [
+        'IPlugConstants.h',
+        'IPlugLogger.h',
+        'IPlugPlatform.h',
+        'IPlugEditorDelegate.h',
+        'IPlugPaths.h',
+        'IPlugUtilities.h',
+        'IPlugParameter.h',
+        'IPlugPluginBase.h',
+        'IPlugMidi.h',
+        'IPlugQueue.h',
+        'IPlugStructs.h',
+    ],
+
+
+
+    visibility = ['PUBLIC']
+)

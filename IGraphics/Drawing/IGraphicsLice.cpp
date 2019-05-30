@@ -37,7 +37,7 @@ public:
     CTFontManagerRegisterGraphicsFont(mCGFont, NULL);
     CFRelease(ctFont);
   }
-  
+
   ~MacRegisteredFont()
   {
     CTFontManagerUnregisterGraphicsFont(mCGFont, NULL);
@@ -49,6 +49,8 @@ private:
 };
 
 static StaticStorage<MacRegisteredFont> sMacRegistedFontCache;
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
 #endif
 
 static StaticStorage<LICE_IFont> sFontCache;
@@ -58,24 +60,24 @@ static StaticStorage<LICEFontInfo> sLICEFontInfoCache;
 inline void PreMulCompositeSourceOver(LICE_pixel_chan* out, LICE_pixel_chan* in)
 {
   unsigned int alphaCmp = 256 - in[LICE_PIXEL_A];
-  
+
   unsigned int A = in[LICE_PIXEL_A] + ((out[LICE_PIXEL_A] * alphaCmp) >> 8);
   unsigned int R = in[LICE_PIXEL_R] + ((out[LICE_PIXEL_R] * alphaCmp) >> 8);
   unsigned int G = in[LICE_PIXEL_G] + ((out[LICE_PIXEL_G] * alphaCmp) >> 8);
   unsigned int B = in[LICE_PIXEL_B] + ((out[LICE_PIXEL_B] * alphaCmp) >> 8);
-  
+
   _LICE_MakePixelClamp(out, R, G, B, A);
 }
 
 inline void PreMulCompositeAdd(LICE_pixel_chan* out, LICE_pixel_chan* in)
 {
   unsigned int alpha = in[LICE_PIXEL_A];
-  
+
   unsigned int A = out[LICE_PIXEL_A] + (255 * in[LICE_PIXEL_A] / alpha);
   unsigned int R = out[LICE_PIXEL_R] + (255 * in[LICE_PIXEL_R] / alpha);
   unsigned int G = out[LICE_PIXEL_G] + (255 * in[LICE_PIXEL_G] / alpha);
   unsigned int B = out[LICE_PIXEL_B] + (255 * in[LICE_PIXEL_B] / alpha);
-  
+
   _LICE_MakePixelClamp(out, R, G, B, A);
 }
 
@@ -87,13 +89,13 @@ void PreMulBlit(LICE_IBitmap *dest, LICE_IBitmap *src, int dstx, int dsty, int s
   dsty = std::max(dsty, 0);
   srcw = std::min(srcw, dest->getWidth() - dstx);
   srch = std::min(srch, dest->getHeight() - dsty);
-  
+
   int inStride = src->getRowSpan() * 4;
   int outStride = dest->getRowSpan() * 4;
-  
+
   LICE_pixel_chan* in = ((LICE_pixel_chan*) src->getBits()) + (srcy * inStride) + (srcx * 4);
   LICE_pixel_chan* out = ((LICE_pixel_chan*) dest->getBits()) + (dsty * outStride) + (dstx * 4);
-  
+
   if ((mode & LICE_BLIT_MODE_MASK) == LICE_BLIT_MODE_ADD)
   {
     for (int i = 0; i < srch; i++, in += inStride, out += outStride)
@@ -125,10 +127,12 @@ IGraphicsLice::IGraphicsLice(IGEditorDelegate& dlg, int w, int h, int fps, float
 #ifdef OS_MAC
   StaticStorage<MacRegisteredFont>::Accessor registeredFontStorage(sMacRegistedFontCache);
   registeredFontStorage.Retain();
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
 #endif
 }
 
-IGraphicsLice::~IGraphicsLice() 
+IGraphicsLice::~IGraphicsLice()
 {
   StaticStorage<LICE_IFont>::Accessor fontStorage(sFontCache);
   StaticStorage<LICEFontInfo>::Accessor fontInfoStorage(sLICEFontInfoCache);
@@ -137,12 +141,14 @@ IGraphicsLice::~IGraphicsLice()
 #ifdef OS_MAC
   StaticStorage<MacRegisteredFont>::Accessor registeredFontStorage(sMacRegistedFontCache);
   registeredFontStorage.Release();
-    
+
   if (mColorSpace)
   {
     CFRelease(mColorSpace);
     mColorSpace = nullptr;
   }
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
 #endif
 }
 
@@ -185,13 +191,13 @@ void IGraphicsLice::DrawBitmap(const IBitmap& bitmap, const IRECT& bounds, int s
 {
   bool preMultiplied = static_cast<LICEBitmap*>(bitmap.GetAPIBitmap())->IsPreMultiplied();
   const int ds = GetScreenScale();
-  
+
   IRECT sr = TransformRECT(bounds);
   IRECT r = sr.Intersect(mDrawRECT.GetScaled(ds));
-  
+
   srcX = (srcX * ds) + r.L - sr.L;
   srcY = (srcY * ds) + r.T - sr.T;
-  
+
   if (preMultiplied)
     PreMulBlit(mRenderBitmap, bitmap.GetAPIBitmap()->GetBitmap(), r.L, r.T, srcX, srcY, r.W(), r.H(), BlendWeight(pBlend), LiceBlendMode(pBlend));
   else
@@ -202,12 +208,12 @@ void IGraphicsLice::DrawRotatedBitmap(const IBitmap& bitmap, float destCtrX, flo
 {
   const int ds = GetScreenScale();
   LICE_IBitmap* pLB = bitmap.GetAPIBitmap()->GetBitmap();
-  
+
   int W = bitmap.W() * ds;
   int H = bitmap.H() * ds;
   int destX = TransformX(destCtrX) - W / 2;
   int destY = TransformY(destCtrY) - H / 2;
-  
+
   LICE_RotatedBlit(mRenderBitmap, pLB, destX, destY, W, H, 0.0f, 0.0f, (float) W, (float) H, (float) DegToRad(angle), false, BlendWeight(pBlend), LiceBlendMode(pBlend) | LICE_BLIT_FILTER_BILINEAR, 0.0f, (float) yOffsetZeroDeg);
 }
 
@@ -223,7 +229,7 @@ void IGraphicsLice::DrawFittedBitmap(const IBitmap& bitmap, const IRECT& bounds,
 void IGraphicsLice::DrawPoint(const IColor& color, float x, float y, const IBlend* pBlend)
 {
   NeedsClipping();
-  
+
   LICE_PutPixel(mRenderBitmap, int(TransformX(x) + 0.5f), int(TransformY(y) + 0.5f), LiceColor(color), BlendWeight(pBlend), LiceBlendMode(pBlend));
 }
 
@@ -233,7 +239,7 @@ void IGraphicsLice::DrawLine(const IColor& color, float x1, float y1, float x2, 
 
   if (!(mClipRECT.Contains(x1, y1) && mClipRECT.Contains(x2, y2)))
     NeedsClipping();
-  
+
   LICE_FLine(mRenderBitmap, TransformX(x1), TransformY(y1), TransformX(x2), TransformY(y2), LiceColor(color), BlendWeight(pBlend), LiceBlendMode(pBlend), true);
 }
 
@@ -242,9 +248,9 @@ void IGraphicsLice::DrawDottedLine(const IColor& color, float x1, float y1, floa
   //TODO: review floating point input support
   if (!(mClipRECT.Contains(x1, y1) && mClipRECT.Contains(x2, y2)))
     NeedsClipping();
-      
+
   const int dash = 2 * GetScreenScale();
-  
+
   LICE_DashedLine(mRenderBitmap, TransformX(x1), TransformY(y1), TransformX(x2), TransformY(y2), dash, dash, LiceColor(color), BlendWeight(pBlend), LiceBlendMode(pBlend), true);
 }
 
@@ -255,7 +261,7 @@ void IGraphicsLice::DrawTriangle(const IColor& color, float x1, float y1, float 
     OpacityLayer(&IGraphicsLice::DrawTriangle, pBlend, color, x1, x1, x2, y2, x3, y3, nullptr, thickness);
     return;
   }
-    
+
   DrawLine(color, x1, y1, x2, y2, pBlend, 1.0);
   DrawLine(color, x2, y2, x3, y3, pBlend, 1.0);
   DrawLine(color, x3, y3, x1, y1, pBlend, 1.0);
@@ -268,7 +274,7 @@ void IGraphicsLice::DrawRect(const IColor& color, const IRECT& bounds, const IBl
     OpacityLayer(&IGraphicsLice::DrawRect, pBlend, color, bounds, nullptr, thickness);
     return;
   }
-    
+
   DrawLine(color, bounds.L, bounds.T, bounds.R, bounds.T, pBlend, thickness);
   DrawLine(color, bounds.L, bounds.B, bounds.R, bounds.B, pBlend, thickness);
   DrawLine(color, bounds.L, bounds.T, bounds.L, bounds.B, pBlend, thickness);
@@ -298,7 +304,7 @@ void IGraphicsLice::DrawConvexPolygon(const IColor& color, float* x, float* y, i
 
   for (int i = 0; i < npoints - 1; i++)
     DrawLine(color, x[i], y[i], x[i+1], y[i+1], pBlend, 1.0);
-  
+
   DrawLine(color, x[npoints - 1], y[npoints - 1], x[0], y[0], pBlend, 1.0);
 }
 
@@ -323,7 +329,7 @@ void IGraphicsLice::DrawDottedRect(const IColor& color, const IRECT& bounds, con
     OpacityLayer(&IGraphicsLice::DrawDottedRect, pBlend, color, bounds, nullptr, thickness, dashLen);
     return;
   }
-  
+
   DrawDottedLine(color, bounds.L, bounds.T, bounds.R, bounds.T, pBlend, thickness, dashLen);
   DrawDottedLine(color, bounds.L, bounds.B, bounds.R, bounds.B, pBlend, thickness, dashLen);
   DrawDottedLine(color, bounds.L, bounds.T, bounds.L, bounds.B, pBlend, thickness, dashLen);
@@ -352,7 +358,7 @@ void IGraphicsLice::FillRoundRect(const IColor& color, const IRECT& bounds, floa
 {
   if (!mClipRECT.Contains(bounds))
     NeedsClipping();
-  
+
   if (!OpacityCheck(color, pBlend))
   {
     void (IGraphicsLice::*method)(const IColor&, const IRECT&, float, const IBlend*) = &IGraphicsLice::FillRoundRect;
@@ -366,20 +372,20 @@ void IGraphicsLice::FillRoundRect(const IColor& color, const IRECT& bounds, floa
   float y1 = r.T;
   float h = r.H();
   float w = r.W();
-  
+
   cr *= GetScreenScale();
   cr = std::abs(cr);
   cr = std::min(cr, r.W() / 2.f);
   cr = std::min(cr, r.H() / 2.f);
-  
+
   int mode = LiceBlendMode(pBlend);
   float weight = BlendWeight(pBlend);
   LICE_pixel lcolor = LiceColor(color);
-  
+
   LICE_FillRect(mRenderBitmap, x1+cr, y1, w-2.f*cr, h, lcolor, weight, mode);
   LICE_FillRect(mRenderBitmap, x1, y1+cr, cr, h-2.f*cr,lcolor, weight, mode);
   LICE_FillRect(mRenderBitmap, x1+w-cr, y1+cr, cr, h-2*cr, lcolor, weight, mode);
-  
+
   LICE_FillCircle(mRenderBitmap, x1+cr, y1+cr, cr, lcolor, weight, mode, true);
   LICE_FillCircle(mRenderBitmap, x1+w-cr, y1+h-cr, cr, lcolor, weight, mode, true);
   LICE_FillCircle(mRenderBitmap, x1+w-cr, y1+cr, cr, lcolor, weight, mode, true);
@@ -401,7 +407,7 @@ void IGraphicsLice::FillConvexPolygon(const IColor& color, float* x, float* y, i
   {
     if (!largeArray.ResizeOK(npoints * 2))
       return;
-      
+
     xpoints = largeArray.Get();
     ypoints = xpoints + npoints;
   }
@@ -411,7 +417,7 @@ void IGraphicsLice::FillConvexPolygon(const IColor& color, float* x, float* y, i
     xpoints[i] = TransformX(x[i]);
     ypoints[i] = TransformY(y[i]);
   }
-    
+
   LICE_FillConvexPolygon(mRenderBitmap, xpoints, ypoints, npoints, LiceColor(color), BlendWeight(pBlend), LiceBlendMode(pBlend));
 }
 
@@ -428,16 +434,16 @@ void IGraphicsLice::FillArc(const IColor& color, float cx, float cy, float r, fl
 
   if (aMax < aMin)
     std::swap(aMin, aMax);
-  
+
   if (aMax >= aMin + 360.f)
   {
     FillCircle(color, cx, cy, r, pBlend);
     return;
   }
-  
+
   float xarray[181];
   float yarray[181];
-  
+
   if (aMax > aMin + 180.f)
   {
     if (!OpacityCheck(color, pBlend))
@@ -445,11 +451,11 @@ void IGraphicsLice::FillArc(const IColor& color, float cx, float cy, float r, fl
       OpacityLayer(&IGraphicsLice::FillArc, pBlend, color, cx, cy, r, aMin, aMax, nullptr);
       return;
     }
-    
+
     FillArc(color, cx, cy, r, aMin + 178.f, aMax, pBlend);
     aMax = aMin + 180.f;
   }
-  
+
   aMin = DegToRad(aMin-90.f);
   aMax = DegToRad(aMax-90.f);
 
@@ -460,7 +466,7 @@ void IGraphicsLice::FillArc(const IColor& color, float cx, float cy, float r, fl
     xarray[i] = cx + cosf(i * arcincrement + aMin) * r;
     yarray[i] = cy + sinf(i * arcincrement + aMin) * r;
   }
-    
+
   xarray[arcpoints] = cx;
   yarray[arcpoints] = cy;
 
@@ -483,9 +489,9 @@ void IGraphicsLice::PrepareAndMeasureText(const IText& text, const char* str, IR
   pFont = CacheFont(text);
   RECT R = {0, 0, 0, 0};
   UINT fmt = DT_NOCLIP | DT_TOP | DT_LEFT | LICE_DT_USEFGALPHA;
-  
+
   pFont->DrawText(mRenderBitmap, str, -1, &R, fmt | DT_CALCRECT);
-  
+
   const float textWidth = R.right / static_cast<float>(GetScreenScale());
   const float textHeight = R.bottom / static_cast<float>(GetScreenScale());
   float x = 0.f;
@@ -497,14 +503,14 @@ void IGraphicsLice::PrepareAndMeasureText(const IText& text, const char* str, IR
     case IText::kAlignCenter:   x = r.MW() - (textWidth / 2.f);   break;
     case IText::kAlignFar:      x = r.R - textWidth;              break;
   }
-  
+
   switch (text.mVAlign)
   {
     case IText::kVAlignTop:      y = r.T;                           break;
     case IText::kVAlignMiddle:   y = r.MH() - (textHeight / 2.f);   break;
     case IText::kVAlignBottom:   y = r.B - textHeight;              break;
   }
-  
+
   r = IRECT(x, y, x + textWidth, y + textHeight);
 }
 
@@ -521,10 +527,10 @@ void IGraphicsLice::DoDrawText(const IText& text, const char* str, const IRECT& 
   IRECT measured = bounds;
   LICE_IFont* pFont;
   UINT fmt = DT_NOCLIP | DT_TOP | DT_LEFT | LICE_DT_USEFGALPHA;
-  
+
   NeedsClipping();
   PrepareAndMeasureText(text, str, measured, pFont);
-  
+
   if (text.mOrientation)
   {
     float pad = std::max(measured.W(), measured.H()) * 0.5;
@@ -537,24 +543,24 @@ void IGraphicsLice::DoDrawText(const IText& text, const char* str, const IRECT& 
   r0.Scale(GetScreenScale());
   IRECT r1 = r0.GetPixelAligned();
   RECT R{ (LONG) r1.L, (LONG) r1.T, (LONG) r1.R, (LONG) r1.B };
-  
+
   pFont->SetTextColor(LiceColor(text.mFGColor, pBlend));
   pFont->DrawText(mRenderBitmap, str, -1, &R, fmt);
-  
+
   if (text.mOrientation)
   {
     ILayerPtr layer = EndLayer();
     LICE_IBitmap* pLICEBitmap = layer->GetAPIBitmap()->GetBitmap();
     int mode = LICE_BLIT_MODE_COPY | LICE_BLIT_USE_ALPHA | LICE_BLIT_FILTER_BILINEAR;
-  
+
     DoMeasureTextRotation(text, bounds, measured);
-    
+
     float radians = DegToRad(text.mOrientation);
-    
+
     IRECT r2 = measured;
     r2.Translate(-mDrawOffsetX, -mDrawOffsetY);
     r2.Scale(GetScreenScale());
-    
+
     int size = std::max(pLICEBitmap->getWidth(), pLICEBitmap->getHeight());
     const float c = std::cos(radians);
     const float s = std::sin(radians);
@@ -599,7 +605,7 @@ void IGraphicsLice::NeedsClipping()
     IRECT alignedBounds = mClipRECT.GetPixelAligned(GetBackingPixelScale());
     const int w = static_cast<int>(std::round(alignedBounds.W() * GetBackingPixelScale()));
     const int h = static_cast<int>(std::round(alignedBounds.H() * GetBackingPixelScale()));
-    
+
     mClippingLayer = std::make_unique<ILayer>(CreateAPIBitmap(w, h, GetScreenScale(), GetDrawScale()), alignedBounds);
     UpdateLayer();
   }
@@ -639,21 +645,24 @@ LICE_IFont* IGraphicsLice::CacheFont(const IText& text) const
 {
   StaticStorage<LICEFontInfo>::Accessor fontInfoStorage(sLICEFontInfoCache);
   LICEFontInfo* pFontInfo = fontInfoStorage.Find(text.mFont);
-  
+
   assert(pFontInfo && "No font found - did you forget to load it?");
-  
+
 #ifdef OS_MAC
   int h = static_cast<int>(std::round(text.mSize * pFontInfo->mEMRatio * GetScreenScale()));
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
+  int h = 0;
 #else
   int h = static_cast<int>(std::round(text.mSize) * GetScreenScale());
 #endif
-    
+
   WDL_String hashStr(text.mFont);
   hashStr.AppendFormatted(FONT_LEN + 10, "-%d", h);
-    
+
   StaticStorage<LICE_IFont>::Accessor fontStorage(sFontCache);
   LICE_CachedFont* font = (LICE_CachedFont*) fontStorage.Find(hashStr.Get());
-    
+
   if (!font)
   {
     int wt = pFontInfo->mBold ? FW_BOLD : FW_NORMAL;
@@ -670,7 +679,7 @@ LICE_IFont* IGraphicsLice::CacheFont(const IText& text) const
     font->SetFromHFont(hFont, LICE_FONT_FLAG_OWNS_HFONT | LICE_FONT_FLAG_FORCE_NATIVE);
     fontStorage.Add(font, hashStr.Get());
   }
-    
+
   return font;
 }
 
@@ -678,16 +687,16 @@ bool IGraphicsLice::LoadAPIFont(const char* fontID, const PlatformFontPtr& font)
 {
   StaticStorage<LICEFontInfo>::Accessor fontInfoStorage(sLICEFontInfoCache);
   LICEFontInfo* cached = fontInfoStorage.Find(fontID);
-  
+
   if (cached)
     return true;
-  
+
   IFontDataPtr data = font->GetFontData();
-  
+
   if (data->IsValid())
   {
     double EMRatio = data->GetHeightEMRatio();
-      
+
 #ifdef OS_MAC
     StaticStorage<MacRegisteredFont>::Accessor registeredFontStorage(sMacRegistedFontCache);
 
@@ -698,7 +707,7 @@ bool IGraphicsLice::LoadAPIFont(const char* fontID, const PlatformFontPtr& font)
       fontName.Append(&data->GetStyle());
     }
     fontInfoStorage.Add(new LICEFontInfo{fontName, false, false, false, EMRatio}, fontID);
-      
+
     if (!font->IsSystem())
     {
       registeredFontStorage.Add(new MacRegisteredFont(font->GetDescriptor()), fontID);
@@ -708,7 +717,7 @@ bool IGraphicsLice::LoadAPIFont(const char* fontID, const PlatformFontPtr& font)
 #endif
     return true;
   }
-  
+
   return false;
 }
 
@@ -716,9 +725,9 @@ bool IGraphicsLice::BitmapExtSupported(const char* ext)
 {
   char extLower[32];
   ToLower(extLower, ext);
-  
+
   bool ispng = strstr(extLower, "png") != nullptr;
-  
+
   if (ispng)
     return true;
 
@@ -736,7 +745,7 @@ APIBitmap* IGraphicsLice::LoadAPIBitmap(const char* fileNameOrResID, int scale, 
 {
   char extLower[32];
   ToLower(extLower, ext);
-  
+
   bool ispng = (strcmp(extLower, "png") == 0);
 
   if (ispng)
@@ -777,9 +786,9 @@ void IGraphicsLice::GetLayerBitmapData(const ILayerPtr& layer, RawBitmapData& da
 {
   const APIBitmap* pBitmap = layer->GetAPIBitmap();
   int size = pBitmap->GetBitmap()->getHeight() * pBitmap->GetBitmap()->getRowSpan() * sizeof(LICE_pixel);
-  
+
   data.Resize(size);
-  
+
   if (data.GetSize() >= size)
     memcpy(data.Get(), pBitmap->GetBitmap()->getBits(), size);
 }
@@ -800,7 +809,7 @@ void IGraphicsLice::ApplyShadowMask(ILayerPtr& layer, RawBitmapData& mask, const
     int nCols = pBitmap->GetWidth() - std::abs(x);
     LICE_pixel_chan* in = mask.Get() + (std::max(-x, 0) * 4) + (std::max(-y, 0) * stride);
     LICE_pixel_chan* out = ((LICE_pixel_chan*) pLayerBitmap->getBits()) + (std::max(x, 0) * 4) + (std::max(y, 0) * stride);
-    
+
     // Pre-multiply color components
     IColor color = shadow.mPattern.GetStop(0).mColor;
     color.Clamp();
@@ -808,11 +817,11 @@ void IGraphicsLice::ApplyShadowMask(ILayerPtr& layer, RawBitmapData& mask, const
     unsigned int ir = (color.R * ia);
     unsigned int ig = (color.G * ia);
     unsigned int ib = (color.B * ia);
-    
+
     if (!shadow.mDrawForeground)
     {
       LICE_Clear(pLayerBitmap, 0);
-    
+
       for (int i = 0; i < nRows; i++, in += stride, out += stride)
       {
         LICE_pixel_chan* chans = out;
@@ -820,12 +829,12 @@ void IGraphicsLice::ApplyShadowMask(ILayerPtr& layer, RawBitmapData& mask, const
         for (int j = 0; j < nCols; j++, chans += 4)
         {
           unsigned int maskAlpha = in[j * 4 + LICE_PIXEL_A];
-        
+
           unsigned int A = (ia * maskAlpha) >> 16;
           unsigned int R = (ir * maskAlpha) >> 16;
           unsigned int G = (ig * maskAlpha) >> 16;
           unsigned int B = (ib * maskAlpha) >> 16;
-      
+
           _LICE_MakePixelNoClamp(chans, R, G, B, A);
         }
       }
@@ -835,17 +844,17 @@ void IGraphicsLice::ApplyShadowMask(ILayerPtr& layer, RawBitmapData& mask, const
       for (int i = 0; i < nRows; i++, in += stride, out += stride)
       {
         LICE_pixel_chan* chans = out;
-        
+
         for (int j = 0; j < nCols; j++, chans += 4)
         {
           unsigned int maskAlpha = in[j * 4 + LICE_PIXEL_A];
           unsigned int alphaCmp = 255 - chans[LICE_PIXEL_A];
-          
+
           unsigned int A = chans[LICE_PIXEL_A] + ((alphaCmp * ia * maskAlpha) >> 24);
           unsigned int R = chans[LICE_PIXEL_R] + ((alphaCmp * ir * maskAlpha) >> 24);
           unsigned int G = chans[LICE_PIXEL_G] + ((alphaCmp * ig * maskAlpha) >> 24);
           unsigned int B = chans[LICE_PIXEL_B] + ((alphaCmp * ib * maskAlpha) >> 24);
-          
+
           _LICE_MakePixelClamp(chans, R, G, B, A);
         }
       }
@@ -862,7 +871,7 @@ void IGraphicsLice::EndFrame()
   if (!mColorSpace)
   {
     int v = GetSystemVersion();
-    
+
     if (v >= 0x1070)
     {
 #ifdef MAC_OS_X_VERSION_10_11
@@ -880,7 +889,7 @@ void IGraphicsLice::EndFrame()
     if (!mColorSpace)
       mColorSpace = CGColorSpaceCreateDeviceRGB();
   }
-    
+
   const unsigned char *p = (const unsigned char *) mDrawBitmap->getBits();
 
   int sw = mDrawBitmap->getRowSpan();
@@ -901,11 +910,11 @@ void IGraphicsLice::EndFrame()
     CGContextRestoreGState(pCGContext);
     CGImageRelease(img);
   }
-#else // OS_WIN
+#elif defined(OS_WIN) // OS_WIN
   PAINTSTRUCT ps;
   HWND hWnd = (HWND) GetWindow();
   HDC dc = BeginPaint(hWnd, &ps);
-  
+
   if (GetDrawScale() == 1.0)
   {
     BitBlt(dc, 0, 0, Width(), Height(), mDrawBitmap->getDC(), 0, 0, SRCCOPY);
@@ -916,8 +925,10 @@ void IGraphicsLice::EndFrame()
     );
     BitBlt(dc, 0, 0, WindowWidth(), WindowHeight(), mScaleBitmap->getDC(), 0, 0, SRCCOPY);
   }
-  
+
   EndPaint(hWnd, &ps);
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
 #endif
 }
 
@@ -937,8 +948,10 @@ void IGraphicsLice::EndFrame()
   #define LineTo SWELL_LineTo
   #define SetPixel SWELL_SetPixel
   #define Polygon(a,b,c) SWELL_Polygon(a,b,c)
-#elif defined OS_WIN
+#elif defined(OS_WIN)
   #define DrawText DrawTextA
+#elif defined(OS_LINUX)
+  // TODO: Linux implementation
 #endif
 
 #include "IGraphicsLice_src.cpp"

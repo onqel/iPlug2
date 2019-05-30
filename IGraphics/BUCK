@@ -1,0 +1,82 @@
+load('//Dependencies/buckbuild:subdir_glob.bzl', 'subdir_glob')
+
+
+cxx_library(
+    name = 'IGraphics',
+    header_namespace = '',
+
+    headers = subdir_glob([('','*.h'), ('Controls', 'ITextEntryControl.h')], prefix=''),
+
+    exported_headers = [
+        'IGraphics.h',
+        'IGraphicsStructs.h',
+        'IGraphicsConstants.h',
+        'IGraphicsEditorDelegate.h',
+        'IGraphicsPathBase.h',
+        'IGraphicsUtilities.h',
+        'IGraphicsPopupMenu.h',
+    ],
+
+    srcs = glob([
+        'Drawing/IGraphicsLice.cpp',
+        'Drawing/IGraphicsLice_src.cpp',
+        'Extras/*.cpp',
+        #'Platforms/*.cpp'
+    ]),    
+
+    exported_platform_preprocessor_flags = [
+        ('linux-x86_64', [
+            #'-DNO_IGRAPHICS=1',
+            #'-DIGRAPHICS_GL=1',
+            #'-DIGRAPHICS_GLES2=1',
+            '-DIGRAPHICS_LICE=1',
+            #'-DIGRAPHICS_NANOVG=1',
+        ])
+    ],
+
+    exported_linker_flags = [],
+
+    exported_deps = [
+        '//IPlug:IPlugExports',
+    ],
+
+    deps = [
+        'buckdeps//linux:gl',
+        '//WDL:WDL',
+        '//WDL/swell:swell',
+        '//Dependencies/IPlug/SWELL:IPlugSWELL',
+        '//Dependencies/IGraphics/AGG:AGG',
+        '//Dependencies/IGraphics/NanoVG:nanovg',
+        '//Dependencies/IGraphics/NanoSVG:nanosvg',
+        '//Dependencies/IGraphics/STB:STB',
+    ],
+
+    link_whole = True,
+    preferred_linkage = 'STATIC',
+    link_style = 'STATIC_PIC',
+
+    visibility = ['PUBLIC']
+)
+
+
+IControlsHeaders = subdir_glob([('Controls', '*.h')], prefix='')
+IControlsHeaders['IControl.h'] = 'IControl.h'
+
+cxx_library(
+    name = 'IControls',
+    header_namespace = '',
+
+    exported_headers = IControlsHeaders,
+    srcs = glob(['Controls/*.cpp']),
+
+    deps = [
+        '//IGraphics:IGraphics',
+        '//Dependencies/IGraphics/STB:STB',
+    ],
+
+    link_whole = True,
+    preferred_linkage = 'STATIC',
+    link_style = 'STATIC_PIC',    
+
+    visibility = ['PUBLIC']
+)

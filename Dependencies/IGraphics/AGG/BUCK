@@ -1,0 +1,14 @@
+load('//Dependencies/buckbuild:subdir_glob.bzl', 'subdir_glob')
+
+cxx_library(
+    name = 'AGG',
+    header_namespace = '',
+    exported_headers = subdir_glob([('agg-2.4/include', '**/*.h')], prefix=''),
+    srcs = glob(['agg-2.4/src/*.cpp']),
+    platform_srcs = [
+        #('linux-x86_64', glob(['agg-2.4/src/platform/'])),
+        ('macosx-x86_64', glob(['agg-2.4/src/platform/mac/*.mm'])),
+        ('^windows.*',    glob(['agg-2.4/src/platform/win32/*.cpp'])),
+    ],
+    visibility = ['PUBLIC']
+)

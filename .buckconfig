@@ -7,8 +7,7 @@
   allow_symlinks = forbid
 
 [repositories]
-
-platformdeps = ./Dependencies/buckbuild/
+  buckdeps = ./Dependencies/buckbuild/
 
 [build]
   engine = deep
@@ -17,11 +16,20 @@ platformdeps = ./Dependencies/buckbuild/
   default_build_file_syntax = SKYLARK
 
 [cxx]
+  cxx_flags = -std=c++14
   should_remap_host_platform = true
 
 [cxx#linux-x86_64]
+  #cxx_flags = -std=c++14 -stdlib=libc++
   should_remap_host_platform = true
   linker_platform = GNU
+
+  cxx.cc=/usr/bin/clang
+  cxx.cpp=/usr/bin/clang
+  cxx.cxx=/usr/bin/clang++
+  cxx.cxxpp=/usr/bin/clang++
+  cxx.cxx=/usr/bin/clang++
+  cxx.ld=/usr/bin/clang++
 
 [cxx#macosx-x86_64]
   combined_preprocess_and_compile = true

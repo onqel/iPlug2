@@ -1,0 +1,12 @@
+load('//Dependencies/buckbuild:subdir_glob.bzl', 'subdir_glob')
+
+cxx_library(
+    name = 'nanovg',
+    header_namespace = '',
+
+    exported_headers = subdir_glob([('src', '*.h')], prefix=''),
+    exported_platform_deps = [
+        ('linux-x86_64', ['buckdeps//linux:gl'])
+    ],
+    visibility = ['PUBLIC']
+)

@@ -10,6 +10,8 @@
 
 #pragma once
 
+#if defined(IGRAPHICS_AGG)
+
 #include "IGraphicsPathBase.h"
 #include "IGraphicsAGG_src.h"
 
@@ -307,3 +309,5 @@ private:
   agg::conv_curve<FontManagerType::path_adaptor_type> mFontCurves;
   agg::conv_transform<agg::conv_curve<FontManagerType::path_adaptor_type>> mFontCurvesTransformed;
 };
+
+#endif

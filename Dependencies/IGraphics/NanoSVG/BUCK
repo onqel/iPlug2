@@ -1,0 +1,9 @@
+load('//Dependencies/buckbuild:subdir_glob.bzl', 'subdir_glob')
+
+prebuilt_cxx_library(
+    name = 'nanosvg',
+    header_namespace = '',
+    header_only = True,
+    exported_headers = subdir_glob([('src', '*.h')], prefix=''),
+    visibility = ['PUBLIC']
+)

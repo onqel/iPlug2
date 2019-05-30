@@ -27,8 +27,10 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#elif defined __linux || defined __linux__ || defined linux
+#include "swell-types.h" // use SWELL on other systems
 #else
-#include "../swell/swell-types.h" // use SWELL on other systems
+#include "../swell/swell-types.h"
 #endif
 
 

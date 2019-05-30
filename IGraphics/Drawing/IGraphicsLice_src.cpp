@@ -8,7 +8,8 @@
  ==============================================================================
 */
 
-#ifdef IGRAPHICS_LICE
+#if defined(INCLUDE_LICE_SRC)
+#ifdef IGRAPHICS_LICE  
 
 #include "lice.cpp"
 //#include "lice_gl_ctx.cpp"
@@ -37,3 +38,4 @@
 #include "lice_png.cpp"
 
 #endif // IGRAPHICS_LICE
+#endif 

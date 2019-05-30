@@ -103,6 +103,10 @@ inline T DegToRad(T degrees)
   #include "wingdi.h"
   #include "Stringapiset.h"
   using FontDescriptor = HFONT;
+#elif defined OS_LINUX
+  // TODO: Linux implementation
+  struct FontDescDummy { int fd = 0; };
+  using FontDescriptor = FontDescDummy*;
 #elif defined OS_WEB
   using FontDescriptor = std::pair<WDL_String, WDL_String>*;
 #else 
@@ -366,7 +370,7 @@ struct IColor
     };
 
     IColor col;
-    h = std::fmodf(h, 1.0f);
+    h = std::fmod(h, 1.0f);
     if (h < 0.0f) h += 1.0f;
     s = Clip(s, 0.0f, 1.0f);
     l = Clip(l, 0.0f, 1.0f);
@@ -530,6 +534,7 @@ static const char* TextStyleString(ETextStyle style)
     case kTextStyleNormal:  return "Regular";
     case kTextStyleBold:    return "Bold";
     case kTextStyleItalic:  return "Italic";
+    default:                return "Regular";
   }
 }
 

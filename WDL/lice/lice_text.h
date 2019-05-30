@@ -3,7 +3,11 @@
 
 #include "lice.h"
 
+#if defined __linux || defined __linux__ || defined linux
+#include "heapbuf.h"
+#else
 #include "../heapbuf.h"
+#endif
 
 #define LICE_FONT_FLAG_VERTICAL 1 // rotate text to vertical (do not set the windows font to vertical though)
 #define LICE_FONT_FLAG_VERTICAL_BOTTOMUP 2

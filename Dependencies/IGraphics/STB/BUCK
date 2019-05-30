@@ -1,0 +1,7 @@
+prebuilt_cxx_library(
+    name = 'STB',
+    header_namespace = '',
+    header_only = True,
+    exported_headers = ['stb_textedit.h'],
+    visibility = ['PUBLIC']
+)
